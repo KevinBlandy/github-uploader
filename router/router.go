@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-func GetRouter () http.Handler {
+func GetRouter() http.Handler {
 
 	// gin.SetMode(gin.DebugMode)
 
@@ -35,13 +35,15 @@ func GetRouter () http.Handler {
 	}
 	router.SetHTMLTemplate(templates)
 
-
 	router.NoRoute(controller.NotFound)
 	router.NoMethod(controller.MethodNotAllowed)
 
 	if config.App.Server.Compression.Enabled {
 		router.Use(gzip.Gzip(gzip.DefaultCompression))
 	}
+
+	// cors
+	router.Use(controller.Cors)
 
 	// 骗骗人
 	router.Use(func(ctx *gin.Context) {
@@ -53,7 +55,7 @@ func GetRouter () http.Handler {
 	router.Use(controller.Recover)
 	router.GET("/ping", controller.Ping)
 
-	router.GET("/",controller.Default)
+	router.GET("/", controller.Default)
 	router.GET("/favicon.ico", controller.ErrorHandle(controller.Favicon))
 
 	// 嵌入式静态资源
@@ -61,7 +63,7 @@ func GetRouter () http.Handler {
 	if err != nil {
 		log.Fatalf("嵌入式静态资源目录映射异常: %s\n", err.Error())
 	} else {
-		router.StaticFS("/static", http.FS(staticFS) )
+		router.StaticFS("/static", http.FS(staticFS))
 	}
 
 	// 文件上传接口，限制Multipart的请求大小
@@ -70,7 +72,6 @@ func GetRouter () http.Handler {
 
 	return router
 }
-
 
 // LoadTemplates 加载模板引擎
 // 模板名称，就是目录的相对路径
@@ -82,7 +83,7 @@ func LoadTemplates(fileSystem fs.FS, root string) (*template.Template, error) {
 	templates := template.New("templates")
 
 	// 模板方法
-	templates.Funcs(map[string] interface{} {})
+	templates.Funcs(map[string]interface{}{})
 
 	return templates, fs.WalkDir(fileSystem, root, func(path string, d fs.DirEntry, err error) error {
 		if d != nil && !d.IsDir() {
@@ -90,7 +91,7 @@ func LoadTemplates(fileSystem fs.FS, root string) (*template.Template, error) {
 			if err != nil {
 				return err
 			}
-			err = func () error {
+			err = func() error {
 				file, err := fileSystem.Open(path)
 				if err != nil {
 					return err
