@@ -1,43 +1,383 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>{{ .title }}</title>
-    </head>
-    <body>
-    <form id="form">
-        <input name="file" type="file" multiple="multiple" accept="image/*"/>
-    </form>
-    </body>
-    <script>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .title }}</title>
+</head>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+    }
 
-        window.onload = () => {
-            document.querySelector(`input[name="file"]`).addEventListener('change', (e) => {
-                const files = e.target.files
-                if (!files) {
-                    return
-                }
-                const formData = new FormData(document.querySelector('#form'))
-                const xhr = new XMLHttpRequest()
-                xhr.open("POST", "/upload")
-                if (xhr.upload){
-                    xhr.upload.onprogress = e => {
-                        const percent  = ((e.loaded / e.total) * 100).toFixed(2);
-                        console.log(`上传进度 ${percent}`);
-                    }
-                }
-                xhr.onload = e => {
-                    document.querySelector('#form').reset()
-                    const message = JSON.parse(xhr.responseText)
-                    if (message.success){
-                        console.log(message)
-                    } else {
-                        const errorMessage = message.message
-                        alert(errorMessage);
-                    }
-                };
-                xhr.send(formData)
-            })
+    .container {
+        margin: 50px auto 0;
+        border-radius: 5px;
+        width: 1000px;
+        height: 700px;
+        box-shadow: 0 0 5px rgba(1, 1, 1, .5);
+        padding-top: 50px;
+        position: relative;
+    }
+
+    .upload-entry {
+        margin: auto;
+        width: 300px;
+        border-radius: 10px;
+        height: 150px;
+        box-shadow: 0 0 5px rgba(1, 1, 1, .12);
+        border: 1px solid #dddddd;
+        cursor: pointer;
+        transition: .3s;
+        position: relative;
+    }
+
+    .upload-entry:hover {
+        box-shadow: 0 0 5px rgba(62, 125, 144, 0.8);
+    }
+
+    .upload-entry:after {
+        position: absolute;
+        content: ' ';
+        width: 90px;
+        height: 3px;
+        border-radius: 5px;
+        background: #d5d5d5;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .upload-entry:before {
+        position: absolute;
+        content: ' ';
+        width: 3px;
+        height: 90px;
+        border-radius: 5px;
+        background: #d5d5d5;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .upload-tip {
+        margin-top: 5px;
+        text-align: center;
+        font-size: 14px;
+        color: #666666;
+    }
+
+    .progress-container {
+        text-align: center;
+    }
+
+    .result-container {
+        width: 950px;
+        height: 350px;
+        border: 1px dashed #dddddd;
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        margin-left: -475px;
+        display: grid;
+        padding: 10px;
+        box-sizing: border-box;
+        grid-template-columns: repeat(auto-fill, 100px);
+        grid-row-gap: 15px;
+        grid-column-gap: 18px;
+        overflow: auto;
+    }
+
+    .img-item {
+        width: 100px;
+    }
+
+    .img-url {
+        width: 100px;
+        height: 80px;
+        overflow: hidden;
+        border-radius: 4px;
+        border: 1px solid #dddddd;
+        box-sizing: border-box;
+    }
+
+    .copy-url {
+        height: 25px;
+        color: #333333;
+        font-size: 12px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        margin-top: 5px;
+        border: 1px solid #2693ff;
+        cursor: pointer;
+        transition: .2s;
+    }
+
+    .copy-url:hover {
+        background: #2693ff;
+        color: #ffffff;
+    }
+
+    .copy-url.error {
+        border: 1px solid red;
+        color: #333333;
+    }
+
+    .copy-url.error:hover {
+        background: none;
+        color: #333333;
+    }
+
+    .fail-svg {
+        width: 100px;
+        height: 50px;
+    }
+
+    .del {
+        font-size: 12px;
+        color: #2693ff;
+        text-align: center;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+    .progress-container{
+        margin-top: 20px;
+        font-size: 20px;
+        color: green;
+        display: none;
+    }
+</style>
+<body>
+<section class="container">
+    <div class="upload-entry">
+        <input name="file" style="display: none" id="fileInput" type="file" multiple="multiple" accept="image/*"/>
+    </div>
+    <div class="upload-tip">支持拖拽，复制</div>
+    <div class="progress-container">0%</div>
+    <div class="result-container">
+
+    </div>
+</section>
+</body>
+<script>
+
+  window.onload = () => {
+    const regExp = new RegExp(/image\/.*/)
+    const fileInput = document.querySelector('#fileInput')
+    const uploadEntry = document.querySelector('.upload-entry')
+    const container = document.querySelector('.container')
+    const uploadTip = document.querySelector('.upload-tip')
+    const resultContainer = document.querySelector('.result-container')
+    const progressContainer = document.querySelector('.progress-container')
+
+    const tempFiles = []
+
+
+    let percentText = ''
+
+    uploadEntry.onclick = () => {
+      fileInput.click()
+    }
+
+
+    fileInput.onchange = (e) => {
+      if (!e.target.files || !e.target.files.length) {
+        return
+      }
+      const files = e.target.files
+      upload([...files])
+      fileInput.value = null
+    }
+
+    container.onpaste = (e) => {
+      if (!e.clipboardData || !e.clipboardData.items) {
+        return
+      }
+      let items = e.clipboardData.items || []
+      items = [...items]
+      const files = items.filter(item => regExp.test(item.type)).map(item => item.getAsFile())
+      upload(files)
+    }
+
+    document.body.ondragover = (event) => {
+      uploadTip.innerHTML = `<span style="color: red">拖放到上方入口</span>   `
+      event.preventDefault()
+    }
+
+    document.body.ondrop = (event) => {
+      resetTip()
+      event.preventDefault()
+    }
+
+    uploadEntry.ondrop = (e) => {
+      if (!e.dataTransfer.files || !e.dataTransfer.files.length) {
+        return
+      }
+      let files = e.dataTransfer.files || []
+      files = [...files]
+      const imgFiles = files.filter(item => regExp.test(item.type)) || []
+      upload(imgFiles)
+      e.preventDefault()
+    }
+
+    function createFormData(files) {
+      const formData = new FormData()
+      files.forEach(item => {
+        item.isRendered = false
+        tempFiles.push(item)
+        formData.append('file', item)
+      })
+      return {formData, changeFiles: files}
+    }
+
+    function resetTip() {
+      uploadTip.innerHTML = `支持拖拽，复制`
+    }
+
+    function upload(files, singleIndex) {
+      const {formData, changeFiles} = createFormData(files)
+      xhr(formData, onprogress)
+        .then(({data}) => {
+          const result = data.data || []
+          result.forEach((item, index) => {
+            const {success, url} = item.success
+            if (singleIndex != null) {
+              tempFiles[singleIndex].success = success
+              tempFiles[singleIndex].url = url
+              return
+            }
+            changeFiles[index].success = success
+            changeFiles[index].url = url
+          })
+          renderImage(singleIndex)
+        })
+    }
+
+    function renderImage(singleIndex) {
+      if (singleIndex != null) {
+        const file = tempFiles[singleIndex]
+        const dom = document.querySelectorAll('.img-item')[singleIndex]
+        dom.innerHTML = createHtml(file.url, singleIndex, file.success)
+        return
+      }
+      tempFiles.forEach((item, index) => {
+        console.log(item)
+        const {success, url, isRendered, isDel} = item
+        if (isRendered || isDel) {
+          return
         }
-    </script>
+        item.isRendered = true
+        const html = createHtml(url, index, success)
+        resultContainer.appendChild(html)
+      })
+    }
+
+    function createHtml(url, index, success) {
+      const successHtml = `
+         <div class="img-item">
+            <div
+                title="${url}"
+                class="img-url"
+                style="background: url('${url}')no-repeat center/cover"
+            >
+            </div>
+            <div class="copy-url copy" data-index="${index}" data-url="${url}">复制链接</div>
+        </div>
+`
+      const failHtml = `
+         <div class="img-item">
+            <div
+                class="img-url"
+            >
+            <svg t="1623852821073" class="icon fail-svg" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1018" width="200" height="200"><path d="M726.4 831.6H313c-16.4 0-29.8-13.3-29.8-29.8V249.4c0-16.4 13.3-29.8 29.8-29.8h413.5c16.4 0 29.8 13.3 29.8 29.8v552.4c-0.1 16.4-13.4 29.8-29.9 29.8z" fill="#99E5E2" p-id="1019"></path><path d="M726.4 236.4c7.1 0 12.9 5.8 12.9 12.9v552.4c0 7.1-5.8 12.9-12.9 12.9H313c-7.1 0-12.9-5.8-12.9-12.9V249.4c0-7.1 5.8-12.9 12.9-12.9h413.4m0-16.9H313c-16.4 0-29.8 13.3-29.8 29.8v552.4c0 16.4 13.3 29.8 29.8 29.8h413.5c16.4 0 29.8-13.3 29.8-29.8V249.4c-0.1-16.5-13.4-29.8-29.9-29.8z" p-id="1020"></path><path d="M322.9 773.7V277.5c0-10 8.1-18.2 18.2-18.2h357.3c10 0 18.2 8.1 18.2 18.2v496.2c0 10-8.1 18.2-18.2 18.2H341.1c-10.1 0-18.2-8.2-18.2-18.2z" fill="#FFFFFF" p-id="1021"></path><path d="M698.3 796.9H341.1c-12.8 0-23.2-10.4-23.2-23.2V277.5c0-12.8 10.4-23.2 23.2-23.2h357.3c12.8 0 23.2 10.4 23.2 23.2v496.2c-0.1 12.8-10.5 23.2-23.3 23.2zM341.1 264.3c-7.3 0-13.2 5.9-13.2 13.2v496.2c0 7.3 5.9 13.2 13.2 13.2h357.3c7.3 0 13.2-5.9 13.2-13.2V277.5c0-7.3-5.9-13.2-13.2-13.2H341.1z" p-id="1022"></path><path d="M508.1 355.2H370.8c-5.5 0-9.9-4.4-9.9-9.9v-28.1c0-5.5 4.4-9.9 9.9-9.9h137.3c5.5 0 9.9 4.4 9.9 9.9v28.1c0 5.5-4.4 9.9-9.9 9.9zM437.4 409h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4z" opacity=".05" p-id="1023"></path><path d="M437.4 462.7h-71.2c-3 0-5.4-2.4-5.4-5.4V444c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4zM673.6 723.1l-48.8-46 46-48.8-27.9-26.3-46 48.8-48.8-46-26.3 27.9 48.9 46-46 48.8 27.9 26.3 45.9-48.8 48.9 46z" fill="#FF9999" p-id="1024"></path><path d="M508.1 553.7H370.8c-5.5 0-9.9-4.4-9.9-9.9v-28.1c0-5.5 4.4-9.9 9.9-9.9h137.3c5.5 0 9.9 4.4 9.9 9.9v28.1c0 5.5-4.4 9.9-9.9 9.9zM437.4 607.5h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4zM437.4 661.2h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4z" opacity=".05" p-id="1025"></path></svg>
+             <div data-index="${index}" class="del">清除</div>
+            </div>
+            <div class="copy-url reUpload error" data-index="${index}">重新上传</div>
+        </div>
+`
+      return document.createElement(success ? successHtml : failHtml)
+    }
+
+    resultContainer.addEventListener('click', e => {
+      const className = e.target.className
+      if (className.includes('copy')) {
+        const index = Number(e.target.dataset.index)
+        const url = e.target.dataset.url
+        copy(url, index)
+        return
+      }
+      if (className.includes('del')) {
+        const index = Number(e.target.dataset.index)
+        del(index)
+        return
+      }
+      if (className.includes('reUpload')) {
+        const index = Number(e.target.dataset.index)
+        reUpload(index)
+      }
+    })
+
+    function reUpload(index) {
+      upload([tempFiles[index]], index)
+    }
+
+    function del(index) {
+      tempFiles[index].isDel = true
+      document.querySelectorAll('.img-item')[index].remove()
+    }
+
+    function copy(url, index) {
+      const input = document.createElement('input')
+      input.setAttribute('readonly', 'readonly')
+      input.setAttribute('value', url)
+      document.body.appendChild(input)
+      input.select()
+      if (document.execCommand('copy')) {
+        document.execCommand('copy')
+        document.querySelector(`.copy[data-index='${index}']`).innerHTML= '已复制'
+      } else {
+        console.log('复制失败')
+      }
+      document.body.removeChild(input)
+    }
+
+    function onprogress(e) {
+      const percent = ((e.loaded / e.total) * 100).toFixed(2)
+      if (Number(percent)===100){
+        progressContainer.style.display = 'none'
+        return
+      }
+      progressContainer.style.display = 'block'
+      progressContainer.innerHTML = `${percent}%`
+    }
+
+    function xhr(formData, onprogress) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.open('POST', '/upload')
+        if (xhr.upload) {
+          xhr.upload.onprogress = e => {
+            onprogress && onprogress(e)
+          }
+        }
+        xhr.onload = () => {
+          const message = JSON.parse(xhr.responseText)
+          if (message.success) {
+            resolve(message)
+          } else {
+            const errorMessage = message.message
+            reject(errorMessage)
+          }
+        }
+        xhr.send(formData)
+      })
+
+    }
+  }
+
+
+</script>
 </html>
