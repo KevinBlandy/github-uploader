@@ -1,0 +1,43 @@
+
+Server:
+  Host: 0.0.0.0
+  Port: 1024
+  ReadTimeout: 0s
+  WriteTimeout: 0s
+  ReadHeaderTimeout: 0s
+  IdleTimeout: 0s
+  MaxHeaderSize: 2KB
+  Compression:
+    Enabled: true
+  Ssl:
+    Enabled: false
+    CertFile:
+    KeyFile:
+
+
+MetaData:
+  Title: "Github文件上传"
+
+Account:
+  "Admin": "123456"
+
+Github:
+  Owner: ""
+  Repository: ""
+  AccessToken: ""
+
+Pid:
+  File: app.pid
+  FatalOnError: false
+
+Http:
+  MaxRequestBody: 100KB
+  Multipart:
+    MaxFileSize: 10MB
+    MaxFiles: 10
+    MaxRequestSize: 100MB
+    MaxMemory: 100KB
+    AllowedFileSuffix:
+      - jpg
+      - gif
+      - png
