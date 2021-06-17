@@ -134,32 +134,119 @@
     .fail-svg {
         width: 100px;
         height: 50px;
+        z-index: 10;
+    }
+    .svg{
+        width: 100px;
+        height: 50px;
+    }
+
+    .loading-container {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        z-index: 100;
+        top: 0;
+        background: rgba(255, 255, 255, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        visibility: hidden;
+
+    }
+
+    @keyframes loading-rotate {
+        100% {
+            transform: rotate(1turn);
+        }
+    }
+
+    .loading-circle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 80px;
+        width: 80px;
+        border-radius: 100%;
+        overflow: hidden;
+        background: #ffffff;
+        position: relative;
+        background-size: 400%;
+        box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.3);
+        color: #333333;
+    }
+
+    .loading-circle:after {
+        content: '';
+        position: absolute;
+        left: -50%;
+        top: -50%;
+        width: 200%;
+        height: 200%;
+        background-repeat: no-repeat;
+        z-index: 1;
+        animation: loading-rotate 3s linear infinite;
+        background-size: 50% 50%, 50% 50%;
+        /*background-size: 100% 50%, 50% 50%;*/
+        background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+        background-image: linear-gradient(#399953, #399953), linear-gradient(#fbb300, #fbb300), linear-gradient(#d53e33, #d53e33), linear-gradient(#377af5, #377af5);
+        /*background-image: linear-gradient(#1C8CFF, #1C8CFF);*/
+    }
+
+    .loading-circle:before {
+        z-index: 2;
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 100%;
+        transform: scale(0.90);
+        background: #ffffff;
+    }
+
+    .loading-circle span {
+        z-index: 3;
+    }
+    .action-btn-group{
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .del {
         font-size: 12px;
         color: #2693ff;
-        text-align: center;
         cursor: pointer;
+        text-align: center;
         text-decoration: underline;
     }
-    .progress-container{
-        margin-top: 20px;
-        font-size: 20px;
-        color: green;
-        display: none;
+    .reason-detail{
+        position: fixed;
+        opacity: 0;
+        visibility: hidden;
+        top: 0;
+        z-index: 150;
+        width: 300px;
+        height: 220px;
+        background: #ffffff;
+        box-shadow: 0 0 10px 0 rgba(48,49,51,0.2);
+        transition: opacity .3s;
     }
+
 </style>
 <body>
+<!--<div class="reason-detail">123</div>-->
 <section class="container">
+    <div class="loading-container">
+        <div class="loading-circle">
+            <span>上传中</span>
+        </div>
+    </div>
     <div class="upload-entry">
         <input name="file" style="display: none" id="fileInput" type="file" multiple="multiple" accept="image/*"/>
     </div>
     <div class="upload-tip">支持拖拽，复制</div>
-    <div class="progress-container">0%</div>
-    <div class="result-container">
-
-    </div>
+    <div class="result-container"></div>
 </section>
 </body>
 <script>
@@ -171,12 +258,11 @@
     const container = document.querySelector('.container')
     const uploadTip = document.querySelector('.upload-tip')
     const resultContainer = document.querySelector('.result-container')
-    const progressContainer = document.querySelector('.progress-container')
+    const loadingContainer = document.querySelector('.loading-container')
+    // const errTip = document.querySelector('.reason-detail')
 
     const tempFiles = []
 
-
-    let percentText = ''
 
     uploadEntry.onclick = () => {
       fileInput.click()
@@ -227,7 +313,6 @@
       const formData = new FormData()
       files.forEach(item => {
         item.isRendered = false
-        tempFiles.push(item)
         formData.append('file', item)
       })
       return {formData, changeFiles: files}
@@ -239,6 +324,7 @@
 
     function upload(files, singleIndex) {
       const {formData, changeFiles} = createFormData(files)
+      loadingContainer.style.visibility = 'visible'
       xhr(formData, onprogress)
         .then(({data = []}) => {
           const result = data || []
@@ -251,8 +337,16 @@
             }
             changeFiles[index].success = success
             changeFiles[index].url = data
+            tempFiles.push(changeFiles[index])
           })
           renderImage(singleIndex)
+        })
+        .catch(err => {
+          console.log(err)
+          alert(err.message || '服务异常')
+        })
+        .finally(() => {
+          loadingContainer.style.visibility = 'hidden'
         })
     }
 
@@ -286,11 +380,15 @@
 `
       const failHtml = `
             <div
+                title="${url}"
                 class="img-url"
             >
+            <div
+            class="fail-svg">
             <svg
                 t="1623852821073"
-                 class="icon fail-svg"
+                 class="icon svg"
+                 data-message="${url}"
                  viewBox="0 0 1024 1024"
                   version="1.1"
               xmlns="http://www.w3.org/2000/svg" p-id="1018" width="200" height="200">
@@ -302,18 +400,22 @@
               <path d="M437.4 462.7h-71.2c-3 0-5.4-2.4-5.4-5.4V444c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4zM673.6 723.1l-48.8-46 46-48.8-27.9-26.3-46 48.8-48.8-46-26.3 27.9 48.9 46-46 48.8 27.9 26.3 45.9-48.8 48.9 46z" fill="#FF9999" p-id="1024"></path>
               <path d="M508.1 553.7H370.8c-5.5 0-9.9-4.4-9.9-9.9v-28.1c0-5.5 4.4-9.9 9.9-9.9h137.3c5.5 0 9.9 4.4 9.9 9.9v28.1c0 5.5-4.4 9.9-9.9 9.9zM437.4 607.5h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4zM437.4 661.2h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4z" opacity=".05" p-id="1025"></path>
             </svg>
-             <div data-index="${index}" class="del">清除</div>
+            </div>
+
+              <div data-index="${index}" class="del">
+                清除
+                </div>
             </div>
             <div class="copy-url reUpload error" data-index="${index}">重新上传</div>
 `
       const element = document.createElement('div')
-      element.className ='img-item'
+      element.className = 'img-item'
       element.innerHTML = success ? successHtml : failHtml
       return element
     }
 
     resultContainer.addEventListener('click', e => {
-      const className = e.target.className
+      const className =[...e.target.classList]
       if (className.includes('copy-btn')) {
         const index = Number(e.target.dataset.index)
         const url = e.target.dataset.url
@@ -331,14 +433,42 @@
       }
     })
 
+    // resultContainer.addEventListener('mouseover', e=>{
+    //   const className = [...e.target.classList]
+    //   if (className.includes('svg')) {
+    //     showErrTip(e)
+    //   }
+    // })
+    //
+    // resultContainer.addEventListener('mouseleave', e=>{
+    //   const className = [...e.target.classList]
+    //   if (!className.includes('svg')) {
+    //     if (errTip.style.opacity === '0'){
+    //       return
+    //     }
+    //     hiddenErrTip(e)
+    //   }
+    // })
+    //
+    // function hiddenErrTip(){
+    //   errTip.style.opacity = '0'
+    //   errTip.style.visibility = 'hidden'
+    // }
+    // function showErrTip(e){
+    //   errTip.style.top = e.y + 'px'
+    //   errTip.style.left = e.x + 'px'
+    //   errTip.style.opacity = '1'
+    //   errTip.style.visibility = 'visible'
+    // }
+
     function reUpload(index) {
       upload([tempFiles[index]], index)
     }
 
     function del(index) {
       tempFiles.splice(index, 1)
-      resultContainer.innerHTML=''
-      tempFiles.forEach(item=>{
+      resultContainer.innerHTML = ''
+      tempFiles.forEach(item => {
         item.isRendered = false
       })
       renderImage()
@@ -352,7 +482,7 @@
       input.select()
       if (document.execCommand('copy')) {
         document.execCommand('copy')
-        document.querySelector(`.copy[data-index='${index}']`).innerHTML= '已复制'
+        document.querySelector(`.copy-btn[data-index='${index}']`).innerHTML = '已复制'
       } else {
         console.log('复制失败')
       }
@@ -361,12 +491,6 @@
 
     function onprogress(e) {
       const percent = ((e.loaded / e.total) * 100).toFixed(2)
-      if (Number(percent)===100){
-        progressContainer.style.display = 'none'
-        return
-      }
-      progressContainer.style.display = 'block'
-      progressContainer.innerHTML = `${percent}%`
     }
 
     function xhr(formData, onprogress) {
@@ -380,12 +504,15 @@
         }
 
         fetch.onload = () => {
+          if (![200, 201].includes(fetch.status)) {
+            reject(JSON.parse(fetch.responseText || {}))
+            return
+          }
           const message = JSON.parse(fetch.responseText)
           if (message.success) {
             resolve(message)
           } else {
-            const errorMessage = message.message
-            reject(errorMessage)
+            reject(JSON.parse(message))
           }
         }
         fetch.send(formData)
