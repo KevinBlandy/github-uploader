@@ -260,7 +260,7 @@
       if (singleIndex != null) {
         const file = tempFiles[singleIndex]
         const dom = document.querySelectorAll('.img-item')[singleIndex]
-        dom.innerHTML = createHtml(file.url, singleIndex, file.success)
+        dom.innerHTML = createHtml(file.url, singleIndex, file.success).innerHTML
         return
       }
       tempFiles.forEach((item, index) => {
@@ -277,7 +277,6 @@
 
     function createHtml(url, index, success) {
       const successHtml = `
-         <div class="img-item">
             <div
                 title="${url}"
                 class="img-url"
@@ -285,10 +284,8 @@
             >
             </div>
             <div class="copy-url copy" data-index="${index}" data-url="${url}">复制链接</div>
-        </div>
 `
       const failHtml = `
-         <div class="img-item">
             <div
                 class="img-url"
             >
@@ -296,9 +293,11 @@
              <div data-index="${index}" class="del">清除</div>
             </div>
             <div class="copy-url reUpload error" data-index="${index}">重新上传</div>
-        </div>
 `
-      return document.createElement(success ? successHtml : failHtml)
+      const element = document.createElement('div')
+      element.className ='img-item'
+      element.innerHTML = success ? successHtml : failHtml
+      return element
     }
 
     resultContainer.addEventListener('click', e => {
