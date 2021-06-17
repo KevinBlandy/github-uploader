@@ -240,17 +240,17 @@
     function upload(files, singleIndex) {
       const {formData, changeFiles} = createFormData(files)
       xhr(formData, onprogress)
-        .then(({data}) => {
-          const result = data.data || []
+        .then(({data = []}) => {
+          const result = data || []
           result.forEach((item, index) => {
-            const {success, url} = item.success
+            const {success, data} = item
             if (singleIndex != null) {
               tempFiles[singleIndex].success = success
-              tempFiles[singleIndex].url = url
+              tempFiles[singleIndex].url = data
               return
             }
             changeFiles[index].success = success
-            changeFiles[index].url = url
+            changeFiles[index].url = data
           })
           renderImage(singleIndex)
         })
@@ -264,7 +264,6 @@
         return
       }
       tempFiles.forEach((item, index) => {
-        console.log(item)
         const {success, url, isRendered, isDel} = item
         if (isRendered || isDel) {
           return
@@ -283,13 +282,26 @@
                 style="background: url('${url}')no-repeat center/cover"
             >
             </div>
-            <div class="copy-url copy" data-index="${index}" data-url="${url}">复制链接</div>
+            <div class="copy-url copy-btn" data-index="${index}" data-url="${url}">复制链接</div>
 `
       const failHtml = `
             <div
                 class="img-url"
             >
-            <svg t="1623852821073" class="icon fail-svg" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1018" width="200" height="200"><path d="M726.4 831.6H313c-16.4 0-29.8-13.3-29.8-29.8V249.4c0-16.4 13.3-29.8 29.8-29.8h413.5c16.4 0 29.8 13.3 29.8 29.8v552.4c-0.1 16.4-13.4 29.8-29.9 29.8z" fill="#99E5E2" p-id="1019"></path><path d="M726.4 236.4c7.1 0 12.9 5.8 12.9 12.9v552.4c0 7.1-5.8 12.9-12.9 12.9H313c-7.1 0-12.9-5.8-12.9-12.9V249.4c0-7.1 5.8-12.9 12.9-12.9h413.4m0-16.9H313c-16.4 0-29.8 13.3-29.8 29.8v552.4c0 16.4 13.3 29.8 29.8 29.8h413.5c16.4 0 29.8-13.3 29.8-29.8V249.4c-0.1-16.5-13.4-29.8-29.9-29.8z" p-id="1020"></path><path d="M322.9 773.7V277.5c0-10 8.1-18.2 18.2-18.2h357.3c10 0 18.2 8.1 18.2 18.2v496.2c0 10-8.1 18.2-18.2 18.2H341.1c-10.1 0-18.2-8.2-18.2-18.2z" fill="#FFFFFF" p-id="1021"></path><path d="M698.3 796.9H341.1c-12.8 0-23.2-10.4-23.2-23.2V277.5c0-12.8 10.4-23.2 23.2-23.2h357.3c12.8 0 23.2 10.4 23.2 23.2v496.2c-0.1 12.8-10.5 23.2-23.3 23.2zM341.1 264.3c-7.3 0-13.2 5.9-13.2 13.2v496.2c0 7.3 5.9 13.2 13.2 13.2h357.3c7.3 0 13.2-5.9 13.2-13.2V277.5c0-7.3-5.9-13.2-13.2-13.2H341.1z" p-id="1022"></path><path d="M508.1 355.2H370.8c-5.5 0-9.9-4.4-9.9-9.9v-28.1c0-5.5 4.4-9.9 9.9-9.9h137.3c5.5 0 9.9 4.4 9.9 9.9v28.1c0 5.5-4.4 9.9-9.9 9.9zM437.4 409h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4z" opacity=".05" p-id="1023"></path><path d="M437.4 462.7h-71.2c-3 0-5.4-2.4-5.4-5.4V444c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4zM673.6 723.1l-48.8-46 46-48.8-27.9-26.3-46 48.8-48.8-46-26.3 27.9 48.9 46-46 48.8 27.9 26.3 45.9-48.8 48.9 46z" fill="#FF9999" p-id="1024"></path><path d="M508.1 553.7H370.8c-5.5 0-9.9-4.4-9.9-9.9v-28.1c0-5.5 4.4-9.9 9.9-9.9h137.3c5.5 0 9.9 4.4 9.9 9.9v28.1c0 5.5-4.4 9.9-9.9 9.9zM437.4 607.5h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4zM437.4 661.2h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4z" opacity=".05" p-id="1025"></path></svg>
+            <svg
+                t="1623852821073"
+                 class="icon fail-svg"
+                 viewBox="0 0 1024 1024"
+                  version="1.1"
+              xmlns="http://www.w3.org/2000/svg" p-id="1018" width="200" height="200">
+              <path d="M726.4 831.6H313c-16.4 0-29.8-13.3-29.8-29.8V249.4c0-16.4 13.3-29.8 29.8-29.8h413.5c16.4 0 29.8 13.3 29.8 29.8v552.4c-0.1 16.4-13.4 29.8-29.9 29.8z" fill="#99E5E2" p-id="1019"></path>
+              <path d="M726.4 236.4c7.1 0 12.9 5.8 12.9 12.9v552.4c0 7.1-5.8 12.9-12.9 12.9H313c-7.1 0-12.9-5.8-12.9-12.9V249.4c0-7.1 5.8-12.9 12.9-12.9h413.4m0-16.9H313c-16.4 0-29.8 13.3-29.8 29.8v552.4c0 16.4 13.3 29.8 29.8 29.8h413.5c16.4 0 29.8-13.3 29.8-29.8V249.4c-0.1-16.5-13.4-29.8-29.9-29.8z" p-id="1020"></path>
+              <path d="M322.9 773.7V277.5c0-10 8.1-18.2 18.2-18.2h357.3c10 0 18.2 8.1 18.2 18.2v496.2c0 10-8.1 18.2-18.2 18.2H341.1c-10.1 0-18.2-8.2-18.2-18.2z" fill="#FFFFFF" p-id="1021"></path>
+              <path d="M698.3 796.9H341.1c-12.8 0-23.2-10.4-23.2-23.2V277.5c0-12.8 10.4-23.2 23.2-23.2h357.3c12.8 0 23.2 10.4 23.2 23.2v496.2c-0.1 12.8-10.5 23.2-23.3 23.2zM341.1 264.3c-7.3 0-13.2 5.9-13.2 13.2v496.2c0 7.3 5.9 13.2 13.2 13.2h357.3c7.3 0 13.2-5.9 13.2-13.2V277.5c0-7.3-5.9-13.2-13.2-13.2H341.1z" p-id="1022"></path>
+              <path d="M508.1 355.2H370.8c-5.5 0-9.9-4.4-9.9-9.9v-28.1c0-5.5 4.4-9.9 9.9-9.9h137.3c5.5 0 9.9 4.4 9.9 9.9v28.1c0 5.5-4.4 9.9-9.9 9.9zM437.4 409h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4z" opacity=".05" p-id="1023"></path>
+              <path d="M437.4 462.7h-71.2c-3 0-5.4-2.4-5.4-5.4V444c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4zM673.6 723.1l-48.8-46 46-48.8-27.9-26.3-46 48.8-48.8-46-26.3 27.9 48.9 46-46 48.8 27.9 26.3 45.9-48.8 48.9 46z" fill="#FF9999" p-id="1024"></path>
+              <path d="M508.1 553.7H370.8c-5.5 0-9.9-4.4-9.9-9.9v-28.1c0-5.5 4.4-9.9 9.9-9.9h137.3c5.5 0 9.9 4.4 9.9 9.9v28.1c0 5.5-4.4 9.9-9.9 9.9zM437.4 607.5h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4zM437.4 661.2h-71.2c-3 0-5.4-2.4-5.4-5.4v-13.3c0-3 2.4-5.4 5.4-5.4h71.2c3 0 5.4 2.4 5.4 5.4v13.3c0 3-2.4 5.4-5.4 5.4z" opacity=".05" p-id="1025"></path>
+            </svg>
              <div data-index="${index}" class="del">清除</div>
             </div>
             <div class="copy-url reUpload error" data-index="${index}">重新上传</div>
@@ -302,7 +314,7 @@
 
     resultContainer.addEventListener('click', e => {
       const className = e.target.className
-      if (className.includes('copy')) {
+      if (className.includes('copy-btn')) {
         const index = Number(e.target.dataset.index)
         const url = e.target.dataset.url
         copy(url, index)
@@ -324,8 +336,12 @@
     }
 
     function del(index) {
-      tempFiles[index].isDel = true
-      document.querySelectorAll('.img-item')[index].remove()
+      tempFiles.splice(index, 1)
+      resultContainer.innerHTML=''
+      tempFiles.forEach(item=>{
+        item.isRendered = false
+      })
+      renderImage()
     }
 
     function copy(url, index) {
@@ -355,15 +371,16 @@
 
     function xhr(formData, onprogress) {
       return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.open('POST', '/upload')
-        if (xhr.upload) {
-          xhr.upload.onprogress = e => {
+        const fetch = new XMLHttpRequest()
+        fetch.open('POST', '/upload')
+        if (fetch.upload) {
+          fetch.upload.onprogress = e => {
             onprogress && onprogress(e)
           }
         }
-        xhr.onload = () => {
-          const message = JSON.parse(xhr.responseText)
+
+        fetch.onload = () => {
+          const message = JSON.parse(fetch.responseText)
           if (message.success) {
             resolve(message)
           } else {
@@ -371,7 +388,7 @@
             reject(errorMessage)
           }
         }
-        xhr.send(formData)
+        fetch.send(formData)
       })
 
     }
