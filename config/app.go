@@ -9,6 +9,7 @@ type AppConfig struct {
 	Server *ServerConfig 				`yaml:"Server"`
 	MetaData *MetaDataConfig			`yaml:"MetaData"`
 	Pid *PidConfig						`yaml:"Pid"`
+	HttpClient *HttpClientConfig		`yaml:"HttpClient"`
 	Http *HttpConfig					`yaml:"Http"`
 	Account map[string] string			`yaml:"Account"`
 	Github GithubConfig					`yaml:"Github"`

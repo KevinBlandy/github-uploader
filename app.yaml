@@ -15,6 +15,9 @@ Server:
     KeyFile:
 
 
+HttpClient:
+  Timeout: 20s
+
 MetaData:
   Title: "Github文件上传"
 

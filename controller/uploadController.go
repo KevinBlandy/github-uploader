@@ -17,10 +17,6 @@ import (
 )
 
 
-var HttpClient = http.Client{
-	Timeout: time.Second* 10,
-}
-
 func GetUpload (ctx *gin.Context)  {
 	ctx.HTML(http.StatusOK, "upload/upload.html", gin.H {
 		"title": config.App.MetaData.Title,
@@ -99,6 +95,10 @@ func PostUpload (ctx *gin.Context) (*common.Response, error){
 			request.Header.Add("Accept", "application/json")
 			request.Header.Add("Content-Type", "application/json; charset=utf-8")
 			request.Header.Add("Authorization", fmt.Sprintf("token %s", githubConfig.AccessToken))
+
+			var HttpClient = http.Client{
+				Timeout: config.App.HttpClient.Timeout,
+			}
 
 			response, err := HttpClient.Do(request)
 			if err != nil {
