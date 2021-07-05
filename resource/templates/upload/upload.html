@@ -5,6 +5,12 @@
     <title>{{ .title }}</title>
 </head>
 <style>
+    :root{
+        --blue: #2693ff;
+        --boder: 1px solid #dddddd;
+        --color-text: #333333;
+    }
+
     * {
         margin: 0;
         padding: 0;
@@ -26,7 +32,7 @@
         border-radius: 10px;
         height: 150px;
         box-shadow: 0 0 5px rgba(1, 1, 1, .12);
-        border: 1px solid #dddddd;
+        border:var(--boder);
         cursor: pointer;
         transition: .3s;
         position: relative;
@@ -74,7 +80,7 @@
     .result-container {
         width: 950px;
         height: 350px;
-        border: 1px dashed #dddddd;
+        border:var(--boder);
         position: absolute;
         bottom: 10px;
         left: 50%;
@@ -97,13 +103,15 @@
         height: 80px;
         overflow: hidden;
         border-radius: 4px;
-        border: 1px solid #dddddd;
+        border: var(--boder);
         box-sizing: border-box;
+        display: block;
+        object-fit: cover;
     }
 
     .copy-url {
         height: 25px;
-        color: #333333;
+        color: var(--color-text);
         font-size: 12px;
         line-height: 1;
         display: flex;
@@ -111,24 +119,24 @@
         justify-content: center;
         border-radius: 4px;
         margin-top: 5px;
-        border: 1px solid #2693ff;
+        border: 1px solid var(--blue);
         cursor: pointer;
         transition: .2s;
     }
 
     .copy-url:hover {
-        background: #2693ff;
+        background: var(--blue);
         color: #ffffff;
     }
 
     .copy-url.error {
         border: 1px solid red;
-        color: #333333;
+        color: var(--color-text);
     }
 
     .copy-url.error:hover {
         background: none;
-        color: #333333;
+        color: var(--color-text);
     }
 
     .fail-svg {
@@ -173,7 +181,7 @@
         position: relative;
         background-size: 400%;
         box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.3);
-        color: #333333;
+        color: var(--color-text);
     }
 
     .loading-circle:after {
@@ -215,27 +223,32 @@
 
     .del {
         font-size: 12px;
-        color: #2693ff;
+        color: var(--blue);
         cursor: pointer;
         text-align: center;
         text-decoration: underline;
     }
-    .reason-detail{
-        position: fixed;
-        opacity: 0;
-        visibility: hidden;
-        top: 0;
-        z-index: 150;
-        width: 300px;
-        height: 220px;
-        background: #ffffff;
-        box-shadow: 0 0 10px 0 rgba(48,49,51,0.2);
-        transition: opacity .3s;
+    .clean-btn{
+        position: absolute;
+        bottom: 400px;
+        border: 1px solid var(--blue);
+        right: 25px;
+        box-sizing: border-box;
+        width: 140px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: .1s;
     }
-
+    .clean-btn:hover{
+        background:var(--blue);
+        color: #ffffff;
+    }
 </style>
 <body>
-<!--<div class="reason-detail">123</div>-->
 <section class="container">
     <div class="loading-container">
         <div class="loading-circle">
@@ -246,6 +259,7 @@
         <input name="file" style="display: none" id="fileInput" type="file" multiple="multiple" accept="image/*"/>
     </div>
     <div class="upload-tip">支持拖拽，复制</div>
+    <div class="clean-btn">清空</div>
     <div class="result-container"></div>
 </section>
 </body>
@@ -259,11 +273,17 @@
     const uploadTip = document.querySelector('.upload-tip')
     const resultContainer = document.querySelector('.result-container')
     const loadingContainer = document.querySelector('.loading-container')
-    // const errTip = document.querySelector('.reason-detail')
+    const cleanBtn = document.querySelector('.clean-btn')
 
-    const tempFiles = []
+    let tempFiles = []
 
-
+    cleanBtn.onclick = ()=>{
+      if (!tempFiles.length){
+        return
+      }
+      tempFiles = []
+      resultContainer.innerHTML = ''
+    }
     uploadEntry.onclick = () => {
       fileInput.click()
     }
@@ -370,12 +390,12 @@
 
     function createHtml(url, index, success) {
       const successHtml = `
-            <div
+            <img
                 title="${url}"
+                src="${url}"
+                loading="lazy"
                 class="img-url"
-                style="background: url('${url}')no-repeat center/cover"
             >
-            </div>
             <div class="copy-url copy-btn" data-index="${index}" data-url="${url}">复制链接</div>
 `
       const failHtml = `
@@ -432,34 +452,6 @@
         reUpload(index)
       }
     })
-
-    // resultContainer.addEventListener('mouseover', e=>{
-    //   const className = [...e.target.classList]
-    //   if (className.includes('svg')) {
-    //     showErrTip(e)
-    //   }
-    // })
-    //
-    // resultContainer.addEventListener('mouseleave', e=>{
-    //   const className = [...e.target.classList]
-    //   if (!className.includes('svg')) {
-    //     if (errTip.style.opacity === '0'){
-    //       return
-    //     }
-    //     hiddenErrTip(e)
-    //   }
-    // })
-    //
-    // function hiddenErrTip(){
-    //   errTip.style.opacity = '0'
-    //   errTip.style.visibility = 'hidden'
-    // }
-    // function showErrTip(e){
-    //   errTip.style.top = e.y + 'px'
-    //   errTip.style.left = e.x + 'px'
-    //   errTip.style.opacity = '1'
-    //   errTip.style.visibility = 'visible'
-    // }
 
     function reUpload(index) {
       upload([tempFiles[index]], index)
