@@ -333,6 +333,11 @@
       const formData = new FormData()
       files.forEach(item => {
         item.isRendered = false
+        if (!item.showUrl){
+          item.showUrl = window.webkitURL
+            ? webkitURL.createObjectURL(item)
+            : URL.createObjectURL(item)
+        }
         formData.append('file', item)
       })
       return {formData, changeFiles: files}
@@ -374,25 +379,25 @@
       if (singleIndex != null) {
         const file = tempFiles[singleIndex]
         const dom = document.querySelectorAll('.img-item')[singleIndex]
-        dom.innerHTML = createHtml(file.url, singleIndex, file.success).innerHTML
+        dom.innerHTML = createHtml(file.url, singleIndex, file.success, file.showUrl).innerHTML
         return
       }
       tempFiles.forEach((item, index) => {
-        const {success, url, isRendered, isDel} = item
+        const {success, url, isRendered, isDel, showUrl} = item
         if (isRendered || isDel) {
           return
         }
         item.isRendered = true
-        const html = createHtml(url, index, success)
+        const html = createHtml(url, index, success, showUrl)
         resultContainer.appendChild(html)
       })
     }
 
-    function createHtml(url, index, success) {
+    function createHtml(url, index, success, showUrl) {
       const successHtml = `
             <img
                 title="${url}"
-                src="${url}"
+                src="${showUrl}"
                 loading="lazy"
                 class="img-url"
             >
