@@ -509,7 +509,7 @@
           if (message.success) {
             resolve(message)
           } else {
-            reject(JSON.parse(message))
+            reject(message)
           }
         }
         fetch.send(formData)
